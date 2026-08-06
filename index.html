@@ -1,1 +1,56 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SEA:LINK</title><style>body{margin:0;background:#f4f8fc;color:#102b4d;font-family:Arial,sans-serif}main{max-width:760px;margin:auto;padding:32px 20px}h1{font-size:36px}section{background:#fff;border:1px solid #d8e4ef;border-radius:18px;padding:22px;margin:16px 0}input,textarea,button{box-sizing:border-box;width:100%;padding:13px;margin:6px 0;border-radius:10px;border:1px solid #cbd9e7;font:inherit}button{background:#356fa9;color:#fff;border:0;font-weight:bold;cursor:pointer}.post{border-top:1px solid #d8e4ef;padding:14px 0}.muted{color:#61738a;font-size:13px}</style></head><body><main><h1>SEA:LINK</h1><p class="muted">선박·폐선 업체 연결 플랫폼</p><section id="auth"><h2>이메일 로그인</h2><input id="email" type="email" placeholder="이메일"><input id="password" type="password" placeholder="비밀번호 6자 이상"><button id="login">로그인 / 회원가입</button></section><section id="write" hidden><b id="who"></b><button id="logout">로그아웃</button><h2>연결글 작성</h2><input id="title" placeholder="제목"><textarea id="body" rows="5" placeholder="연결이 필요한 내용을 작성하세요."></textarea><button id="publish">글 올리기</button></section><section><h2>공개 연결글</h2><div id="posts">불러오는 중...</div></section></main><script type="module">import{initializeApp}from'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';import{getFirestore,collection,addDoc,serverTimestamp,query,orderBy,onSnapshot}from'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';const app=initializeApp({apiKey:'AIzaSyAJqwse098x-e8Vh7HYY7l7k0NfGBAPrgE',authDomain:'re-sail.firebaseapp.com',projectId:'re-sail',storageBucket:'re-sail.firebasestorage.app',messagingSenderId:'354900083905',appId:'1:354900083905:web:654fc1fb651c2579d24040'}),auth=getAuth(app),db=getFirestore(app);const $=id=>document.getElementById(id);$('login').onclick=async()=>{try{await signInWithEmailAndPassword(auth,$('email').value,$('password').value)}catch{try{await createUserWithEmailAndPassword(auth,$('email').value,$('password').value)}catch(e){alert(e.message)}}};$('logout').onclick=()=>signOut(auth);$('publish').onclick=async()=>{if(!$('title').value||!$('body').value)return alert('제목과 내용을 입력하세요.');try{await addDoc(collection(db,'posts'),{title:$('title').value,body:$('body').value,author:auth.currentUser.email,authorId:auth.currentUser.uid,createdAt:serverTimestamp()});$('title').value='';$('body').value=''}catch(e){alert('저장 실패: '+e.message)}};onAuthStateChanged(auth,u=>{$('auth').hidden=!!u;$('write').hidden=!u;$('who').textContent=u?u.email:''});onSnapshot(query(collection(db,'posts'),orderBy('createdAt','desc')),{includeMetadataChanges:true},s=>{$('posts').innerHTML=s.docs.map(d=>{let p=d.data();return`<div class="post"><b>${p.title||''}</b><p>${p.body||''}</p><span class="muted">${p.author||''}</span></div>`}).join('')||'아직 글이 없습니다.'},e=>{$('posts').textContent='Firestore 규칙을 확인해 주세요: '+e.message});</script></body></html>
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Re:sail</title>
+  <style>
+    :root { color-scheme: light; }
+    body { margin:0; background:#f4f8fc; color:#102b4d; font-family:Arial,sans-serif; }
+    main { max-width:760px; margin:auto; padding:32px 20px; }
+    h1 { margin-bottom:4px; font-size:36px; }
+    section { background:#fff; border:1px solid #d8e4ef; border-radius:18px; padding:22px; margin:16px 0; }
+    input, textarea, button { box-sizing:border-box; width:100%; padding:13px; margin:6px 0; border-radius:10px; border:1px solid #cbd9e7; font:inherit; }
+    button { background:#356fa9; color:#fff; border:0; font-weight:bold; cursor:pointer; }
+    .post { border-top:1px solid #d8e4ef; padding:14px 0; }
+    .muted { color:#61738a; font-size:13px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Re:sail</h1>
+    <p class="muted">선박·폐선 업체 연결 플랫폼</p>
+    <section id="auth">
+      <h2>이메일 로그인</h2>
+      <input id="email" type="email" placeholder="이메일">
+      <input id="password" type="password" placeholder="비밀번호 6자 이상">
+      <button id="login">로그인 / 회원가입</button>
+    </section>
+    <section id="write" hidden>
+      <b id="who"></b>
+      <button id="logout">로그아웃</button>
+      <h2>연결글 작성</h2>
+      <input id="title" placeholder="제목">
+      <textarea id="body" rows="5" placeholder="연결이 필요한 내용을 작성하세요."></textarea>
+      <button id="publish">글 올리기</button>
+    </section>
+    <section>
+      <h2>공개 연결글</h2>
+      <div id="posts">불러오는 중...</div>
+    </section>
+  </main>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js';
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js';
+    import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js';
+
+    const firebaseApp = initializeApp({ apiKey:'AIzaSyAJqwse098x-e8Vh7HYY7l7k0NfGBAPrgE', authDomain:'re-sail.firebaseapp.com', projectId:'re-sail', storageBucket:'re-sail.firebasestorage.app', messagingSenderId:'354900083905', appId:'1:354900083905:web:654fc1fb651c2579d24040' });
+    const auth = getAuth(firebaseApp), db = getFirestore(firebaseApp), $ = id => document.getElementById(id);
+    $('login').onclick = async () => { try { await signInWithEmailAndPassword(auth, $('email').value, $('password').value); } catch { try { await createUserWithEmailAndPassword(auth, $('email').value, $('password').value); } catch (e) { alert(e.message); } } };
+    $('logout').onclick = () => signOut(auth);
+    $('publish').onclick = async () => { if (!$('title').value || !$('body').value) return alert('제목과 내용을 입력하세요.'); try { await addDoc(collection(db,'posts'), { title:$('title').value, body:$('body').value, author:auth.currentUser.email, authorId:auth.currentUser.uid, createdAt:serverTimestamp() }); $('title').value=''; $('body').value=''; } catch (e) { alert('저장 실패: '+e.message); } };
+    onAuthStateChanged(auth, u => { $('auth').hidden=!!u; $('write').hidden=!u; $('who').textContent=u?u.email:''; });
+    onSnapshot(query(collection(db,'posts'), orderBy('createdAt','desc')), { includeMetadataChanges:true }, s => { $('posts').innerHTML=s.docs.map(d => { const p=d.data(); return `<div class="post"><b>${p.title||''}</b><p>${p.body||''}</p><span class="muted">${p.author||''}</span></div>`; }).join('') || '아직 글이 없습니다.'; }, e => { $('posts').textContent='Firestore 규칙을 확인해 주세요: '+e.message; });
+  </script>
+</body>
+</html>
